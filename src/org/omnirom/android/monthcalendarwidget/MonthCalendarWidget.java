@@ -74,6 +74,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
             Calendar cal = Calendar.getInstance();
             int thisMonth = sp.getInt(PREF_MONTH, cal.get(Calendar.MONTH));
             int thisYear = sp.getInt(PREF_YEAR, cal.get(Calendar.YEAR));
+            cal.set(Calendar.DAY_OF_MONTH, 1);
             cal.set(Calendar.MONTH, thisMonth);
             cal.set(Calendar.YEAR, thisYear);
             cal.add(Calendar.MONTH, -1);
@@ -88,6 +89,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
             Calendar cal = Calendar.getInstance();
             int thisMonth = sp.getInt(PREF_MONTH, cal.get(Calendar.MONTH));
             int thisYear = sp.getInt(PREF_YEAR, cal.get(Calendar.YEAR));
+            cal.set(Calendar.DAY_OF_MONTH, 1);
             cal.set(Calendar.MONTH, thisMonth);
             cal.set(Calendar.YEAR, thisYear);
             cal.add(Calendar.MONTH, 1);
@@ -135,10 +137,12 @@ public class MonthCalendarWidget extends AppWidgetProvider {
 
         Calendar cal = Calendar.getInstance();
         int today = cal.get(Calendar.DAY_OF_YEAR);
+        int todayYear = cal.get(Calendar.YEAR);
         int thisMonth;
         if (!mini) {
             thisMonth = sp.getInt(PREF_MONTH, cal.get(Calendar.MONTH));
             int thisYear = sp.getInt(PREF_YEAR, cal.get(Calendar.YEAR));
+            cal.set(Calendar.DAY_OF_MONTH, 1);
             cal.set(Calendar.MONTH, thisMonth);
             cal.set(Calendar.YEAR, thisYear);
         } else {
@@ -173,7 +177,8 @@ public class MonthCalendarWidget extends AppWidgetProvider {
             RemoteViews rowRv = new RemoteViews(context.getPackageName(), R.layout.row_week);
             for (int day = 0; day < 7; day++) {
                 boolean inMonth = cal.get(Calendar.MONTH) == thisMonth;
-                boolean isToday = inMonth && cal.get(Calendar.DAY_OF_YEAR) == today;
+                boolean inYear  = cal.get(Calendar.YEAR) == todayYear;
+                boolean isToday = inYear && inMonth && (cal.get(Calendar.DAY_OF_YEAR) == today);
 
                 boolean isFirstOfMonth = cal.get(Calendar.DAY_OF_MONTH) == 1;
                 int cellLayoutResId = R.layout.cell_day;
