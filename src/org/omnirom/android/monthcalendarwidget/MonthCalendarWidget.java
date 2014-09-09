@@ -25,9 +25,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.CalendarContract;
 import android.text.format.DateFormat;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -154,10 +156,10 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         if (!mini) {
             cal.set(Calendar.DAY_OF_MONTH, 1);
             int monthStartDayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-            cal.add(Calendar.DAY_OF_MONTH, 1 - monthStartDayOfWeek);
+            cal.add(Calendar.DAY_OF_MONTH, - dayToDayId(monthStartDayOfWeek, cal));
         } else {
             int todayDayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-            cal.add(Calendar.DAY_OF_MONTH, 1 - todayDayOfWeek);
+            cal.add(Calendar.DAY_OF_MONTH, - dayToDayId(todayDayOfWeek, cal));
         }
 
         rv.removeAllViews(R.id.calendar);
@@ -166,8 +168,12 @@ public class MonthCalendarWidget extends AppWidgetProvider {
                 R.layout.row_header);
         DateFormatSymbols dfs = DateFormatSymbols.getInstance();
         String[] weekdays = dfs.getShortWeekdays();
-        for (int day = Calendar.SUNDAY; day <= Calendar.SATURDAY; day++) {
-            RemoteViews dayRv = new RemoteViews(context.getPackageName(), R.layout.cell_header);
+        for (int dayId = 0; dayId < 7; dayId++) {
+            int day = dayIdToDay(dayId, cal);
+            boolean isToday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == day;
+            int cellHeaderLayoutResId = isToday ? R.layout.cell_header_today : R.layout.cell_header;
+
+            RemoteViews dayRv = new RemoteViews(context.getPackageName(), cellHeaderLayoutResId);
             dayRv.setTextViewText(android.R.id.text1, weekdays[day]);
             headerRowRv.addView(R.id.row_container, dayRv);
         }
@@ -188,6 +194,17 @@ public class MonthCalendarWidget extends AppWidgetProvider {
                     cellLayoutResId = R.layout.cell_day_this_month;
                 }
                 RemoteViews cellRv = new RemoteViews(context.getPackageName(), cellLayoutResId);
+
+                Uri.Builder builder = CalendarContract.CONTENT_URI.buildUpon();
+                builder.appendPath("time");
+                builder.appendPath(Long.toString(cal.getTimeInMillis()));
+                Intent intent = new Intent(Intent.ACTION_VIEW, builder.build());
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                cellRv.setOnClickPendingIntent(android.R.id.text1,
+                        PendingIntent.getActivity(context, 0, intent,
+                                PendingIntent.FLAG_UPDATE_CURRENT));
+
                 cellRv.setTextViewText(android.R.id.text1,
                         Integer.toString(cal.get(Calendar.DAY_OF_MONTH)));
                 if (isFirstOfMonth) {
@@ -219,4 +236,15 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         rv.setViewVisibility(R.id.month_bar, numWeeks <= 1 ? View.GONE : View.VISIBLE);
         appWidgetManager.updateAppWidget(appWidgetId, rv);
     }
+
+    static private int dayIdToDay(int dayId, Calendar cal)
+    {
+        return (cal.getFirstDayOfWeek() - 1 + dayId) % 7 + 1;
+    }
+
+    static private int dayToDayId(int day, Calendar cal)
+    {
+        return (7 - cal.getFirstDayOfWeek() + day) % 7;
+    }
+
 }
